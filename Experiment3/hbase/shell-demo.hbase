@@ -1,0 +1,77 @@
+puts '=== Reset only the dedicated shell exercise tables ==='
+['lab3_student_shell', 'lab3_course_shell', 'lab3_sc_shell', 'lab3_ops_shell'].each do |name|
+  if exists(name)
+    disable name if is_enabled(name)
+    drop name
+  end
+end
+
+create 'lab3_student_shell', 'Info'
+put 'lab3_student_shell', 'Zhangsan', 'Info:S_No', '2015001'
+put 'lab3_student_shell', 'Zhangsan', 'Info:S_Name', 'Zhangsan'
+put 'lab3_student_shell', 'Zhangsan', 'Info:S_Sex', 'male'
+put 'lab3_student_shell', 'Zhangsan', 'Info:S_Age', '23'
+put 'lab3_student_shell', 'Mary', 'Info:S_No', '2015002'
+put 'lab3_student_shell', 'Mary', 'Info:S_Name', 'Mary'
+put 'lab3_student_shell', 'Mary', 'Info:S_Sex', 'female'
+put 'lab3_student_shell', 'Mary', 'Info:S_Age', '22'
+put 'lab3_student_shell', 'Lisi', 'Info:S_No', '2015003'
+put 'lab3_student_shell', 'Lisi', 'Info:S_Name', 'Lisi'
+put 'lab3_student_shell', 'Lisi', 'Info:S_Sex', 'male'
+put 'lab3_student_shell', 'Lisi', 'Info:S_Age', '24'
+
+create 'lab3_course_shell', 'Info'
+put 'lab3_course_shell', '123001', 'Info:C_No', '123001'
+put 'lab3_course_shell', '123001', 'Info:C_Name', 'Math'
+put 'lab3_course_shell', '123001', 'Info:C_Credit', '2.0'
+put 'lab3_course_shell', '123002', 'Info:C_No', '123002'
+put 'lab3_course_shell', '123002', 'Info:C_Name', 'Computer Science'
+put 'lab3_course_shell', '123002', 'Info:C_Credit', '5.0'
+put 'lab3_course_shell', '123003', 'Info:C_No', '123003'
+put 'lab3_course_shell', '123003', 'Info:C_Name', 'English'
+put 'lab3_course_shell', '123003', 'Info:C_Credit', '3.0'
+
+create 'lab3_sc_shell', 'Info', 'Score'
+put 'lab3_sc_shell', 'Zhangsan', 'Info:S_No', '2015001'
+put 'lab3_sc_shell', 'Zhangsan', 'Score:Math', '86'
+put 'lab3_sc_shell', 'Zhangsan', 'Score:English', '69'
+put 'lab3_sc_shell', 'Mary', 'Info:S_No', '2015002'
+put 'lab3_sc_shell', 'Mary', 'Score:Computer Science', '77'
+put 'lab3_sc_shell', 'Mary', 'Score:English', '99'
+put 'lab3_sc_shell', 'Lisi', 'Info:S_No', '2015003'
+put 'lab3_sc_shell', 'Lisi', 'Score:Math', '98'
+put 'lab3_sc_shell', 'Lisi', 'Score:Computer Science', '95'
+
+list
+describe 'lab3_student_shell'
+describe 'lab3_course_shell'
+describe 'lab3_sc_shell'
+scan 'lab3_student_shell'
+scan 'lab3_course_shell'
+scan 'lab3_sc_shell'
+count 'lab3_student_shell'
+count 'lab3_course_shell'
+count 'lab3_sc_shell'
+scan 'lab3_sc_shell', {COLUMNS => 'Score'}
+scan 'lab3_sc_shell', {COLUMNS => 'Score:Math'}
+get 'lab3_sc_shell', 'Mary', 'Score:Math'
+
+puts '=== Change operations on a separate practice table ==='
+create 'lab3_ops_shell', 'Info'
+put 'lab3_ops_shell', 'demo', 'Info:value', 'before'
+put 'lab3_ops_shell', 'demo', 'Info:value', 'after'
+get 'lab3_ops_shell', 'demo', 'Info:value'
+alter 'lab3_ops_shell', {NAME => 'Extra'}
+put 'lab3_ops_shell', 'demo', 'Extra:note', 'temporary'
+scan 'lab3_ops_shell'
+deleteall 'lab3_ops_shell', 'demo', 'Extra:note'
+get 'lab3_ops_shell', 'demo', 'Extra:note'
+alter 'lab3_ops_shell', {NAME => 'Extra', METHOD => 'delete'}
+describe 'lab3_ops_shell'
+put 'lab3_ops_shell', 'delete_me', 'Info:value', 'temporary row'
+count 'lab3_ops_shell'
+deleteall 'lab3_ops_shell', 'delete_me'
+count 'lab3_ops_shell'
+truncate 'lab3_ops_shell'
+count 'lab3_ops_shell'
+exit

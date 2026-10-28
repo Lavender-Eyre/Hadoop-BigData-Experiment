@@ -1,0 +1,10 @@
+software/
+downloads/
+runtime/
+logs/
+results/
+prepared/
+build/
+*.class
+*.jar
+__pycache__/

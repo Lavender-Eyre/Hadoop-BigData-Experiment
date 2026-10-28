@@ -1,0 +1,45 @@
+PageRank interface and choices
+
+1. Use Python 3 only for standard-library Hadoop Streaming and preparation.
+   Spark uses Java 8 RDD APIs, avoiding PySpark/Python 3.14 compatibility issues.
+2. Formula: PR_new(v)=0.15+0.85*(sum(PR_old(u)/outdegree(u))+dangling_sum/N).
+   Initialize every page to 1.0. Total PR stays approximately N, not 1.
+3. Exactly 10 updates. Each Hadoop update has a dangling-sum MR job followed by
+   a rank-update MR job: 20 YARN jobs in total. Spark has 10 RDD update rounds.
+4. Input is real TAB between page and comma-separated outgoing links. Empty
+   outgoing list is allowed (E<TAB>). Names cannot contain tabs, commas or
+   parentheses. normalize.py merges repeated source rows, deduplicates edges,
+   and adds target-only pages as dangling nodes. Both programs use this same graph.
+5. Preparation is local for the user-created small experimental dataset;
+   rank computations are distributed on YARN. MR driver collects only the
+   dangling mass scalar. Reducer holds contributions of one page at a time.
+6. Existing output paths are refused, not deleted. Choose a fresh RUN path.
+
+Run from the lab root in Ubuntu after Hadoop/YARN and Spark are configured:
+
+python3 pagerank/normalize.py pagerank/data.tsv prepared
+RUN=/user/$USER/lab3-$(date +%Y%m%d-%H%M%S)
+hdfs dfs -mkdir -p "$RUN/input"
+hdfs dfs -put prepared/initial.tsv prepared/normalized.tsv "$RUN/input/"
+N=$(cat prepared/node_count.txt)
+bash pagerank/run_mr.sh "$RUN/input/initial.tsv" "$RUN/mr" "$N" 2>&1 | tee mr-run.log
+hdfs dfs -cat "$RUN/mr/iter10/part-*" > mr-result.txt
+
+mkdir -p build/spark
+javac -encoding UTF-8 -source 8 -target 8 -cp "$SPARK_HOME/jars/*" -d build/spark pagerank/SparkPageRank.java
+jar cf build/spark-pagerank.jar -C build/spark .
+spark-submit --master yarn --deploy-mode client --class SparkPageRank \
+  --num-executors 1 --executor-cores 2 --executor-memory 1g --driver-memory 1g \
+  build/spark-pagerank.jar "$RUN/input/normalized.tsv" "$RUN/spark" 2>&1 | tee spark-run.log
+hdfs dfs -cat "$RUN/spark/part-*" > spark-result.txt
+python3 pagerank/compare.py pagerank/data.tsv mr-result.txt spark-result.txt
+
+Set `set -o pipefail` before pipelines so failures are not hidden by tee.
+If rerunning, use another RUN path. The prepared directory can be reused if
+the dataset did not change; normalize.py refuses to overwrite it.
+The final display order is not a ranking requirement. Spark output is sorted
+by page name; MR partitions may produce a different order. compare.py compares
+by page name and checks exact 10-decimal formatting and the mass invariant.
+
+The shipped Python code is suitable for testing locally; actual Hadoop and
+Spark cluster completion must be confirmed on the user's machine.

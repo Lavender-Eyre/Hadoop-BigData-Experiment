@@ -1,0 +1,50 @@
+HBase 实验说明
+
+运行环境：WSL Ubuntu；先配置 JAVA_HOME、HBASE_HOME 和 PATH，并启动 HDFS 与 HBase。
+以下命令都在 Ubuntu Bash 中、pagerank-lab 根目录执行。
+
+1. Shell 演示
+   mkdir -p logs
+   set -o pipefail
+   hbase shell -n hbase/shell-demo.hbase 2>&1 | tee logs/hbase-shell.log
+
+2. 编译并运行 Java API 演示
+   bash hbase/run-java.sh
+
+3. 如需单独测试题目规定的三参数 modifyData 方法：
+   bash hbase/run-java.sh modify lab3_sc_api Mary Score:Math
+   在 Enter new value 提示后输入 88 并回车。
+   这会给 Mary 增加 Math 成绩。重新执行 bash hbase/run-java.sh 可恢复原始实验数据。
+
+表设计
+   lab3_student_api / lab3_student_shell
+     行键为 S_Name，列族 Info；列为 S_No、S_Name、S_Sex、S_Age。
+   lab3_course_api / lab3_course_shell
+     行键为 C_No，列族 Info；列为 C_No、C_Name、C_Credit。
+   lab3_sc_api / lab3_sc_shell
+     行键为 S_Name，Info:S_No 保存学号；Score:课程名保存成绩。
+     Math、Computer Science、English 作为列限定符，未选课不存储对应单元格。
+   lab3_ops_api / lab3_ops_shell
+     单独用于增加列族、删除列族、增加列、删除列、修改、删除行、清空表演示。
+
+结果检查
+   Student、Course、SC 三张主表的 count 均为 3。
+   SC 虽然只有 3 行，但共有 6 个成绩单元格。
+   API scanColumn(Score:Math) 应输出 Lisi=98、Mary=null、Zhangsan=86。
+   API scanColumn(Score) 会列出所有出现过的成绩列，每个学生未选课程显示 null。
+   Shell 的 scan 只显示实际存在的单元格；get Mary Score:Math 显示无单元格。
+   HBase 的列族需要显式建立，列限定符通过 put 自动产生，没有 SQL 式 ALTER ADD COLUMN。
+   deleteall table,row,column 删除该单元格所有版本；deleteall table,row 删除整行。
+   Java 中 createTable 按题目要求删除重建已有表；演示仅调用专用 lab3_* 表名。
+   truncate 演示完成后 ops 表行数为 0，主样例表保留。
+
+原文疑点与本代码处理
+   原文 Student 中 Mary、Lisi 学号同为 2015003，而 SC 使用了 2015002。
+   本示例假设 Mary 应为 2015002，Lisi 为 2015003。报告需说明此假设。
+   原文 modifyData(table,row,column) 缺少新值参数，本代码保留三参数接口，
+   从终端读取新值，并提供四参数重载方便自动演示。
+   姓名作为行键遵循题目示例；真实系统中姓名可能重名，通常应使用唯一学号。
+
+代码验证范围
+   代码按 HBase 2.x API 编写；尚未在本机实际启动 HBase 集群执行。
+   请以你的 WSL 运行日志与截图作为实验结果，不能把预期结果当作实测结果。
